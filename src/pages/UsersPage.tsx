@@ -3,14 +3,14 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { UserCard } from '@/components/dashboard/UserCard';
 import { UserEditModal } from '@/components/dashboard/UserEditModal';
 import { UserDetailModal } from '@/components/dashboard/UserDetailModal';
-import { mockUsers } from '@/data/mockData';
+import { useFirebaseUsers } from '@/hooks/useFirebaseUsers';
 import { User } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
 const UsersPage = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const { users, loading, updateUser, deleteUser } = useFirebaseUsers();
   const [searchValue, setSearchValue] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
@@ -24,16 +24,17 @@ const UsersPage = () => {
     setViewingUser(user);
   };
 
-  const handleDeleteUser = (user: User) => {
-    setUsers(prev => prev.filter(u => u.id !== user.id));
+  const handleDeleteUser = async (user: User) => {
+    await deleteUser(user.id);
     toast({
       title: "User Deleted",
       description: `${user.fullName} has been removed.`,
     });
   };
 
-  const handleSaveUser = (updatedUser: User) => {
-    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+  const handleSaveUser = async (updatedUser: User) => {
+    const { id, ...userData } = updatedUser;
+    await updateUser(id, userData);
     toast({
       title: "User Updated",
       description: `${updatedUser.fullName}'s data has been saved.`,
@@ -45,6 +46,17 @@ const UsersPage = () => {
     user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
     user.country.toLowerCase().includes(searchValue.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Users" searchValue="" onSearchChange={() => {}}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading users...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout 

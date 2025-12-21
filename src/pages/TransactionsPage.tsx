@@ -1,29 +1,30 @@
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { TransactionRow } from '@/components/dashboard/TransactionRow';
-import { mockTransactions, mockUsers } from '@/data/mockData';
-import { Transaction } from '@/types/user';
+import { useFirebaseTransactions } from '@/hooks/useFirebaseTransactions';
+import { useFirebaseUsers } from '@/hooks/useFirebaseUsers';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const TransactionsPage = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const { transactions, loading: txLoading, deleteTransaction } = useFirebaseTransactions();
+  const { users, loading: usersLoading } = useFirebaseUsers();
   const [searchValue, setSearchValue] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const { toast } = useToast();
 
-  const handleEditTransaction = (transaction: Transaction) => {
+  const handleEditTransaction = () => {
     toast({
       title: "Edit Transaction",
       description: "Transaction editing coming soon!",
     });
   };
 
-  const handleDeleteTransaction = (transaction: Transaction) => {
-    setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+  const handleDeleteTransaction = async (transaction: { id: string }) => {
+    await deleteTransaction(transaction.id);
     toast({
       title: "Transaction Deleted",
       description: "Transaction has been removed.",
@@ -31,7 +32,7 @@ const TransactionsPage = () => {
   };
 
   const getUserName = (userId: string) => {
-    const user = mockUsers.find(u => u.id === userId);
+    const user = users.find(u => u.id === userId);
     return user?.fullName || 'Unknown User';
   };
 
@@ -44,6 +45,19 @@ const TransactionsPage = () => {
   });
 
   const types = ['all', 'deposit', 'withdrawal', 'profit', 'investment'] as const;
+
+  const isLoading = txLoading || usersLoading;
+
+  if (isLoading) {
+    return (
+      <DashboardLayout title="Transactions" searchValue="" onSearchChange={() => {}}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading transactions...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout 
@@ -84,7 +98,7 @@ const TransactionsPage = () => {
             <TransactionRow
               transaction={transaction}
               onEdit={handleEditTransaction}
-              onDelete={handleDeleteTransaction}
+              onDelete={() => handleDeleteTransaction(transaction)}
             />
           </div>
         ))}
