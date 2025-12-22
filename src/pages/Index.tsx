@@ -5,16 +5,16 @@ import { UserCard } from '@/components/dashboard/UserCard';
 import { TransactionRow } from '@/components/dashboard/TransactionRow';
 import { UserEditModal } from '@/components/dashboard/UserEditModal';
 import { UserDetailModal } from '@/components/dashboard/UserDetailModal';
-import { useFirebaseUsers } from '@/hooks/useFirebaseUsers';
-import { useFirebaseTransactions } from '@/hooks/useFirebaseTransactions';
-import { User } from '@/types/user';
-import { Users, DollarSign, TrendingUp, ArrowDownUp, Loader2 } from 'lucide-react';
+import { mockUsers, mockTransactions } from '@/data/mockData';
+import { User, Transaction } from '@/types/user';
+import { Users, DollarSign, TrendingUp, ArrowDownUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
-  const { users, loading: usersLoading, updateUser, deleteUser } = useFirebaseUsers();
-  const { transactions, loading: txLoading } = useFirebaseTransactions();
+  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [transactions] = useState<Transaction[]>(mockTransactions);
   const [searchValue, setSearchValue] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const { toast } = useToast();
@@ -40,17 +40,16 @@ const Index = () => {
     setViewingUser(user);
   };
 
-  const handleDeleteUser = async (user: User) => {
-    await deleteUser(user.id);
+  const handleDeleteUser = (user: User) => {
+    setUsers(prev => prev.filter(u => u.id !== user.id));
     toast({
       title: "User Deleted",
       description: `${user.fullName} has been removed.`,
     });
   };
 
-  const handleSaveUser = async (updatedUser: User) => {
-    const { id, ...userData } = updatedUser;
-    await updateUser(id, userData);
+  const handleSaveUser = (updatedUser: User) => {
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     toast({
       title: "User Updated",
       description: `${updatedUser.fullName}'s data has been saved.`,
@@ -61,19 +60,6 @@ const Index = () => {
     user.fullName.toLowerCase().includes(searchValue.toLowerCase()) ||
     user.email.toLowerCase().includes(searchValue.toLowerCase())
   ).slice(0, 4);
-
-  const isLoading = usersLoading || txLoading;
-
-  if (isLoading) {
-    return (
-      <DashboardLayout title="Dashboard" searchValue="" onSearchChange={() => {}}>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2 text-muted-foreground">Loading data...</span>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout 
