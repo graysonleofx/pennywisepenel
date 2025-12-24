@@ -4,16 +4,14 @@ import { UserCard } from '@/components/dashboard/UserCard';
 import { UserEditModal } from '@/components/dashboard/UserEditModal';
 import { UserDetailModal } from '@/components/dashboard/UserDetailModal';
 import { mockUsers } from '@/data/mockData';
-// import { User } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
 // Firebase imports
-import { app } from '@/lib/firebase.js';
+import { app } from '../lib/firebase.js';
 import { ref,getDatabase, onValue, update as firebaseUpdate } from 'firebase/database';
-// import { database } from '@/firebase';
-// import { getDatabase, ref, get } from 'firebase/database';
+
 
 const UsersPage = () => {
   const [users, setUsers] = useState(mockUsers);
@@ -150,3 +148,4 @@ const UsersPage = () => {
 };
 
 export default UsersPage;
+
