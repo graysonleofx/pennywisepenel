@@ -8,7 +8,7 @@ import { Shield, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Firebase imports
-import { app } from '@/lib/firebase.js';
+import { app } from '../lib/firebase.js';
 import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getDatabase, ref, get } from 'firebase/database';
 
