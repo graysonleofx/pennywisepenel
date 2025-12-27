@@ -17,7 +17,7 @@ export function UserCard({ user, onView, onEdit, onDelete }) {
         <Avatar className="h-12 w-12 ring-2 ring-primary/20">
           <AvatarImage src={user.image} alt={user.fullName} />
           <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-            {user.fullName.split(' ').map(n => n[0]).join('')}
+            {/* {user.fullName.split(' ').map(n => n[0]).join('')} */}
           </AvatarFallback>
         </Avatar>
         

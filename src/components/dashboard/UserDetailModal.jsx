@@ -102,10 +102,10 @@ export function UserDetailModal({ user, open, onClose }) {
                 <p className="text-xs text-muted-foreground">Password</p>
                 <p className="font-medium text-foreground font-mono">{maskPassword(user.password)}</p>
               </div>
-              <div className="bg-secondary/50 rounded-lg p-3 col-span-2">
+              {/* <div className="bg-secondary/50 rounded-lg p-3 col-span-2">
                 <p className="text-xs text-muted-foreground">Created At</p>
                 <p className="font-medium text-foreground">{user.createdAt}</p>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
