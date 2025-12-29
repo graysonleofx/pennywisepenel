@@ -16,8 +16,14 @@ export function UserEditModal({ user, open, onClose, onSave }) {
 
   if (!formData) return null;
 
-  const handleChange = (field) => {
+  const handleChange = (field, value) => {
     setFormData(prev => prev ? { ...prev, [field]: value } : null);
+
+    // increase balance by value
+
+    if (field === 'balance') {
+      setFormData(prev => prev ? { ...prev, balance: prev.balance + value } : null);
+    }
   };
 
   const handleSubmit = (e) => {
