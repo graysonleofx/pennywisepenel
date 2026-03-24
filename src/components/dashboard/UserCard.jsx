@@ -1,19 +1,10 @@
-import { User } from '@/types/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
-interface UserCardProps {
-  user: User;
-  onView: (user: User) => void;
-  onEdit: (user: User) => void;
-  onDelete: (user: User) => void;
-}
-
-export function UserCard({ user, onView, onEdit, onDelete }: UserCardProps) {
-  const formatCurrency = (amount: number) => {
+export function UserCard({ user, onView, onEdit, onDelete }) {
+  const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -26,7 +17,7 @@ export function UserCard({ user, onView, onEdit, onDelete }: UserCardProps) {
         <Avatar className="h-12 w-12 ring-2 ring-primary/20">
           <AvatarImage src={user.image} alt={user.fullName} />
           <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-            {user.fullName.split(' ').map(n => n[0]).join('')}
+            {/* {user.fullName.split(' ').map(n => n[0]).join('')} */}
           </AvatarFallback>
         </Avatar>
         
@@ -45,7 +36,7 @@ export function UserCard({ user, onView, onEdit, onDelete }: UserCardProps) {
       <div className="grid grid-cols-2 gap-3 mt-4">
         <div className="bg-secondary/50 rounded-md p-2">
           <p className="text-xs text-muted-foreground">Balance</p>
-          <p className="font-semibold text-primary">{formatCurrency(user.balance)}</p>
+          <p className="font-semibold text-primary">{formatCurrency(user.accountBalance)}</p>
         </div>
         <div className="bg-secondary/50 rounded-md p-2">
           <p className="text-xs text-muted-foreground">Total Profit</p>

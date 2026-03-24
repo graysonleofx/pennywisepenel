@@ -1,4 +1,3 @@
-import { User } from '@/types/user';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,15 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useState, useEffect } from 'react';
 
-interface UserEditModalProps {
-  user: User | null;
-  open: boolean;
-  onClose: () => void;
-  onSave: (user: User) => void;
-}
-
-export function UserEditModal({ user, open, onClose, onSave }: UserEditModalProps) {
-  const [formData, setFormData] = useState<User | null>(null);
+export function UserEditModal({ user, open, onClose, onSave }) {
+  const [formData, setFormData] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -24,11 +16,17 @@ export function UserEditModal({ user, open, onClose, onSave }: UserEditModalProp
 
   if (!formData) return null;
 
-  const handleChange = (field: keyof User, value: string | number | boolean) => {
+  const handleChange = (field, value) => {
     setFormData(prev => prev ? { ...prev, [field]: value } : null);
+
+    // increase balance by value
+
+    if (field === 'balance') {
+      setFormData(prev => prev ? { ...prev, balance: prev.balance + value } : null);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (formData) {
       onSave(formData);

@@ -1,27 +1,22 @@
-import { User } from '@/types/user';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-interface UserDetailModalProps {
-  user: User | null;
-  open: boolean;
-  onClose: () => void;
-}
-
-export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
+export function UserDetailModal({ user, open, onClose }) {
   if (!user) return null;
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
   };
 
-  const maskPassword = (password: string) => {
-    return '•'.repeat(Math.min(password.length, 12));
+  const maskPassword = (password) => {
+    // return '•'.repeat(Math.min(password.length, 12));
+    // show password for admin view
+    return password;
   };
 
   return (
@@ -74,7 +69,7 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-secondary/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground">Balance</p>
-                <p className="font-bold text-primary text-lg">{formatCurrency(user.balance)}</p>
+                <p className="font-bold text-primary text-lg">{formatCurrency(user.accountBalance)}</p>
               </div>
               <div className="bg-secondary/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground">Total Profit</p>
@@ -107,10 +102,10 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
                 <p className="text-xs text-muted-foreground">Password</p>
                 <p className="font-medium text-foreground font-mono">{maskPassword(user.password)}</p>
               </div>
-              <div className="bg-secondary/50 rounded-lg p-3 col-span-2">
+              {/* <div className="bg-secondary/50 rounded-lg p-3 col-span-2">
                 <p className="text-xs text-muted-foreground">Created At</p>
                 <p className="font-medium text-foreground">{user.createdAt}</p>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
