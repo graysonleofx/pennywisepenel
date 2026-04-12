@@ -11,7 +11,7 @@ import { Plus } from 'lucide-react';
 
 // Firebase imports
 import { app } from '../lib/firebase.js';
-import { ref, getDatabase, onValue, update as firebaseUpdate } from 'firebase/database';
+import { ref, getDatabase, onValue, update as firebaseUpdate, remove } from 'firebase/database';
 
 
 const UsersPage = () => {
@@ -74,13 +74,25 @@ const UsersPage = () => {
   };
 
   const handleDeleteUser = async (user) => {
-    setUsers(prev => prev.filter(u => u.id !== user.id));
-    toast({
-      title: "User Deleted",
-      description: `${user.fullName} has been removed.`,
-    });
-    // Optionally remove from Firebase as well (uncomment to enable)
-    // await remove(ref(database, `users/${user.id}`));
+    try {
+      // Remove from Firebase first
+      await remove(ref(getDatabase(app), `users/${user.id}`));
+      
+      // Then update local state
+      setUsers(prev => prev.filter(u => u.id !== user.id));
+      
+      toast({
+        title: "User Deleted",
+        description: `${user.fullName} has been removed from the database.`,
+      });
+    } catch (err) {
+      console.error('Firebase delete error:', err);
+      toast({
+        title: 'Delete failed',
+        description: err.message || 'Could not delete user from database',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Persist changes locally and to Firebase
