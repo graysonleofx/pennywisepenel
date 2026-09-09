@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { Header } from './Header';
-import { Search } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title: string;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  hideSearch?: boolean;
 }
 
 export const DashboardLayout = ({
@@ -16,16 +16,23 @@ export const DashboardLayout = ({
   title,
   searchValue = '',
   onSearchChange = () => {},
+  hideSearch = false,
 }: DashboardLayoutProps) => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <Sidebar />
+      {/* Desktop Sidebar - Fixed */}
+      <div className="hidden lg:block w-64 fixed left-0 top-0 h-screen">
+        <Sidebar />
+      </div>
+
+      {/* Mobile Navigation */}
       <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
-      <div className="flex-1 flex flex-col">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col lg:ml-64">
         <Header
           onMenuClick={() => setMobileNavOpen(true)}
           searchValue={searchValue}
@@ -33,18 +40,18 @@ export const DashboardLayout = ({
           title={title}
           isMobileSearchOpen={isMobileSearchOpen}
           onMobileSearchToggle={() => setIsMobileSearchOpen((p) => !p)}
+          hideSearch={hideSearch}
         />
 
-        {isMobileSearchOpen && (
-          <div className="block md:hidden border-b px-4 py-2 bg-surface">
+        {isMobileSearchOpen && !hideSearch && (
+          <div className="block lg:hidden border-b border-border px-4 py-2 bg-card">
             <div className="relative flex items-center">
-              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search users..."
-                className="w-full pl-10 pr-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring focus:border-primary"
+                placeholder="Search..."
+                className="w-full pl-10 pr-3 py-2 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
               />
             </div>
           </div>

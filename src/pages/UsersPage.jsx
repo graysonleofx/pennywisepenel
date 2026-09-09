@@ -7,11 +7,11 @@ import { mockUsers } from '@/data/mockData';
 // import { User } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 
 // Firebase imports
 import { app } from '../lib/firebase.js';
-import { ref, getDatabase, onValue, update as firebaseUpdate } from 'firebase/database';
+import { ref, getDatabase, onValue, update as firebaseUpdate, remove } from 'firebase/database';
 
 
 const UsersPage = () => {
@@ -74,13 +74,25 @@ const UsersPage = () => {
   };
 
   const handleDeleteUser = async (user) => {
-    setUsers(prev => prev.filter(u => u.id !== user.id));
-    toast({
-      title: "User Deleted",
-      description: `${user.fullName} has been removed.`,
-    });
-    // Optionally remove from Firebase as well (uncomment to enable)
-    // await remove(ref(database, `users/${user.id}`));
+    try {
+      // Remove from Firebase first
+      await remove(ref(getDatabase(app), `users/${user.id}`));
+      
+      // Then update local state
+      setUsers(prev => prev.filter(u => u.id !== user.id));
+      
+      toast({
+        title: "User Deleted",
+        description: `${user.fullName} has been removed from the database.`,
+      });
+    } catch (err) {
+      console.error('Firebase delete error:', err);
+      toast({
+        title: 'Delete failed',
+        description: err.message || 'Could not delete user from database',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Persist changes locally and to Firebase
@@ -118,33 +130,45 @@ const UsersPage = () => {
       searchValue={searchValue} 
       onSearchChange={setSearchValue}
     >
-      <div className="flex items-center justify-between mb-6">
-        <p className="text-muted-foreground">
-          {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found
-        </p>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div><h2 className="text-xl font-semibold text-foreground">User Management</h2><p className="text-sm text-muted-foreground">Manage registered users</p></div>
+        {/* <Button className="min-h-10 bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           Add User
-        </Button>
+        </Button> */}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-8 ">
-        {filteredUsers.map((user) => (
-          <UserCard
-            key={user.id}
-            user={user}
-            onView={handleViewUser}
-            onEdit={handleEditUser}
-            onDelete={handleDeleteUser}
-          />
-        ))}
-      </div>
+      <section className="rounded-xl border border-border bg-card shadow-sm-custom">
+        {/* <div className="border-b border-border p-4 md:p-5">
+          <div className="relative max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search users..." className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+          </div>
+        </div> */}
+        <div className="hidden overflow-x-auto md:block">
+          <div className="min-w-[760px]">
+            {/* <div className="grid grid-cols-[1.6fr_1fr_1fr_0.8fr_0.55fr] gap-4 border-b border-border px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"><span>User</span><span>Phone</span><span>Balance</span><span>Details</span><span>Actions</span></div> */}
+            {filteredUsers.map((user) => <UserCard key={user.id} user={user} onView={handleViewUser} onEdit={handleEditUser} onDelete={handleDeleteUser} />)}
+          </div>
+        </div>
+        <div className="grid gap-3 p-3 md:hidden">
+          {filteredUsers.map((user) => (
+            <UserCard
+              key={user.id}
+              user={user}
+              onView={handleViewUser}
+              onEdit={handleEditUser}
+              onDelete={handleDeleteUser}
+            />
+          ))}
+        </div>
+      </section>
 
-      {filteredUsers.length === 0 && (
-        <div className="text-center py-12">
+      {filteredUsers.length === 0 ? (
+        <div className="py-12 text-center">
           <p className="text-muted-foreground">No users found matching your search.</p>
         </div>
-      )}
+      ) : null}
 
       <UserEditModal
         user={editingUser}

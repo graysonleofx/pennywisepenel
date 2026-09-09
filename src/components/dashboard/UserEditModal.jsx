@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { useState, useEffect } from 'react';
 
 export function UserEditModal({ user, open, onClose, onSave }) {
@@ -18,12 +19,6 @@ export function UserEditModal({ user, open, onClose, onSave }) {
 
   const handleChange = (field, value) => {
     setFormData(prev => prev ? { ...prev, [field]: value } : null);
-
-    // increase balance by value
-
-    if (field === 'balance') {
-      setFormData(prev => prev ? { ...prev, balance: prev.balance + value } : null);
-    }
   };
 
   const handleSubmit = (e) => {
@@ -34,138 +29,81 @@ export function UserEditModal({ user, open, onClose, onSave }) {
     }
   };
 
+  const numericFields = [
+    ['balance', 'Balance'],
+    ['totalDeposit', 'Total Deposit'],
+    ['totalWithdrawal', 'Total Withdrawal'],
+    ['totalInvestment', 'Total Investment'],
+    ['totalProfit', 'Total Profit'],
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="user-detail-drawer h-screen max-h-screen w-full max-w-md overflow-hidden rounded-none border-border bg-card p-0 sm:max-w-md md:max-w-[390px]">
+        <DialogHeader className="shrink-0 px-5 pt-5 sm:px-7 sm:pt-7">
           <DialogTitle className="text-foreground">Edit User</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-muted-foreground">Full Name</Label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => handleChange('fullName', e.target.value)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-muted-foreground">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="flex max-h-[calc(100vh-8rem)] min-h-0 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-7 sm:pb-7">
+            <div className="space-y-6">
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Personal information</h3>
+                  <p className="text-xs text-muted-foreground">Basic identity and login details.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-muted-foreground">Full Name</Label>
+                    <Input id="fullName" value={formData.fullName || ''} onChange={(e) => handleChange('fullName', e.target.value)} className="bg-secondary border-border text-foreground" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-muted-foreground">Email</Label>
+                    <Input id="email" type="email" value={formData.email || ''} onChange={(e) => handleChange('email', e.target.value)} className="bg-secondary border-border text-foreground" />
+                  </div>
+                </div>
+              </section>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-muted-foreground">Phone</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleChange('phone', e.target.value)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
+              <Separator />
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Contact information</h3>
+                  <p className="text-xs text-muted-foreground">Keep contact details current.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {['phone', 'country'].map((field) => (
+                    <div key={field} className="space-y-2">
+                      <Label htmlFor={field} className="text-muted-foreground">{field === 'phone' ? 'Phone' : 'Country'}</Label>
+                      <Input id={field} value={formData[field] || ''} onChange={(e) => handleChange(field, e.target.value)} className="bg-secondary border-border text-foreground" />
+                    </div>
+                  ))}
+                </div>
+              </section>
 
-            <div className="space-y-2">
-              <Label htmlFor="country" className="text-muted-foreground">Country</Label>
-              <Input
-                id="country"
-                value={formData.country}
-                onChange={(e) => handleChange('country', e.target.value)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
+              <Separator />
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Financial information</h3>
+                  <p className="text-xs text-muted-foreground">Administrative values only. Passwords are never displayed.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {numericFields.map(([field, label]) => (
+                    <div key={field} className="space-y-2">
+                      <Label htmlFor={field} className="text-muted-foreground">{label}</Label>
+                      <Input id={field} type="number" value={formData[field] ?? 0} onChange={(e) => handleChange(field, parseFloat(e.target.value) || 0)} className="bg-secondary border-border text-foreground" />
+                    </div>
+                  ))}
+                </div>
+              </section>
 
-            <div className="space-y-2">
-              <Label htmlFor="balance" className="text-muted-foreground">Balance</Label>
-              <Input
-                id="balance"
-                type="number"
-                value={formData.balance}
-                onChange={(e) => handleChange('balance', parseFloat(e.target.value) || 0)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="totalProfit" className="text-muted-foreground">Total Profit</Label>
-              <Input
-                id="totalProfit"
-                type="number"
-                value={formData.totalProfit}
-                onChange={(e) => handleChange('totalProfit', parseFloat(e.target.value) || 0)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="totalDeposit" className="text-muted-foreground">Total Deposit</Label>
-              <Input
-                id="totalDeposit"
-                type="number"
-                value={formData.totalDeposit}
-                onChange={(e) => handleChange('totalDeposit', parseFloat(e.target.value) || 0)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="totalWithdrawal" className="text-muted-foreground">Total Withdrawal</Label>
-              <Input
-                id="totalWithdrawal"
-                type="number"
-                value={formData.totalWithdrawal}
-                onChange={(e) => handleChange('totalWithdrawal', parseFloat(e.target.value) || 0)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="totalInvestment" className="text-muted-foreground">Total Investment</Label>
-              <Input
-                id="totalInvestment"
-                type="number"
-                value={formData.totalInvestment}
-                onChange={(e) => handleChange('totalInvestment', parseFloat(e.target.value) || 0)}
-                className="bg-secondary border-border text-foreground"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="referer" className="text-muted-foreground">Referer</Label>
-              <Input
-                id="referer"
-                value={formData.referer}
-                onChange={(e) => handleChange('referer', e.target.value)}
-                className="bg-secondary border-border text-foreground"
-              />
+              <div className="flex items-center justify-between rounded-lg bg-secondary/50 p-3">
+                <Label htmlFor="firstLogin" className="text-muted-foreground">First Login Status</Label>
+                <Switch id="firstLogin" checked={Boolean(formData.firstLogin)} onCheckedChange={(checked) => handleChange('firstLogin', checked)} />
+              </div>
             </div>
           </div>
-
-          <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-            <Label htmlFor="firstLogin" className="text-muted-foreground">First Login Status</Label>
-            <Switch
-              id="firstLogin"
-              checked={formData.firstLogin}
-              onCheckedChange={(checked) => handleChange('firstLogin', checked)}
-            />
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={onClose} className="border-border text-muted-foreground hover:bg-secondary">
-              Cancel
-            </Button>
-            <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Save Changes
-            </Button>
+          <DialogFooter className="sticky bottom-0 grid shrink-0 grid-cols-2 gap-2 border-t border-border bg-card px-5 py-4 sm:px-7">
+            <Button type="button" variant="outline" className="min-h-11" onClick={onClose}>Cancel</Button>
+            <Button type="submit" className="min-h-11 bg-primary text-primary-foreground hover:bg-primary/90">Save Changes</Button>
           </DialogFooter>
         </form>
       </DialogContent>
