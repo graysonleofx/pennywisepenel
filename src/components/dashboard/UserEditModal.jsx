@@ -30,9 +30,9 @@ export function UserEditModal({ user, open, onClose, onSave }) {
   };
 
   const numericFields = [
-    ['balance', 'Balance'],
-    ['totalDeposit', 'Total Deposit'],
-    ['totalWithdrawal', 'Total Withdrawal'],
+    ['accountBalance', 'Available Balance'],
+    // ['totalDeposit', 'Total Deposit'],
+    // ['totalWithdrawal', 'Total Withdrawal'],
     ['totalInvestment', 'Total Investment'],
     ['totalProfit', 'Total Profit'],
   ];

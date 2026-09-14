@@ -126,11 +126,24 @@ const PendingApprovalsPage = () => {
     
     try {
       setIsProcessing(true);
-      await depositsService.approveDeposit(
+      const result = await depositsService.approveDeposit(
         confirmModal.deposit.id,
         confirmModal.deposit.userId,
         confirmModal.deposit.amount
       );
+
+      if (result === false) {
+        setConfirmModal({ isOpen: false, type: null, deposit: null });
+        setShowReviewModal(false);
+        setSelectedDeposit(null);
+        await fetchPendingDeposits();
+        toast({
+          title: 'Deposit already processed',
+          description: 'This deposit is no longer pending.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       toast({
         title: '✓ Deposit approved',
@@ -158,11 +171,25 @@ const PendingApprovalsPage = () => {
 
     try {
       setIsProcessing(true);
-      await depositsService.rejectDeposit(
+      const result = await depositsService.rejectDeposit(
         confirmModal.deposit.id,
         confirmModal.deposit.userId,
         rejectionReason
       );
+
+      if (result === false) {
+        setConfirmModal({ isOpen: false, type: null, deposit: null });
+        setShowReviewModal(false);
+        setSelectedDeposit(null);
+        setRejectionReason('');
+        await fetchPendingDeposits();
+        toast({
+          title: 'Deposit already processed',
+          description: 'This deposit is no longer pending.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       toast({
         title: '✓ Deposit rejected',

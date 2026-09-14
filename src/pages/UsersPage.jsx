@@ -51,11 +51,16 @@ const UsersPage = () => {
           // preserve other fields, but override/ensure a numeric accountBalance
           ...r,
           accountBalance: safeBalance,
+          balance: safeBalance,
         };
       });
       setUsers(list);
     }, (err) => {
       console.error('Firebase onValue error (users):', err);
+      if (String(err?.message || err).includes('PERMISSION_DENIED') || String(err?.message || err).includes('permission denied')) {
+        setUsers([]);
+        return;
+      }
       toast({ title: 'Failed to load users', description: String(err) });
     });
 
@@ -100,20 +105,33 @@ const UsersPage = () => {
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
 
     try {
-      // ensure numeric balance saved
-      const payload = { ...updatedUser, accountBalance: sanitizeBalance(updatedUser.accountBalance) };
-       // update the DB node for this user
+      const payload = {
+        fullName: updatedUser.fullName || '',
+        email: updatedUser.email || '',
+        phone: updatedUser.phone || '',
+        country: updatedUser.country || '',
+        role: updatedUser.role || 'user',
+        firstLogin: Boolean(updatedUser.firstLogin),
+        accountBalance: sanitizeBalance(updatedUser.accountBalance ?? updatedUser.balance),
+        balance: sanitizeBalance(updatedUser.balance ?? updatedUser.accountBalance),
+        totalDeposit: sanitizeBalance(updatedUser.totalDeposit),
+        totalProfit: sanitizeBalance(updatedUser.totalProfit),
+        totalInvestment: sanitizeBalance(updatedUser.totalInvestment),
+        totalWithdrawal: sanitizeBalance(updatedUser.totalWithdrawal),
+      };
+
       await firebaseUpdate(ref(getDatabase(app), `users/${updatedUser.id}`), payload);
       toast({
         title: "User Updated",
-        description: `${updatedUser.fullName}'s data has been saved.`,
+        description: `${updatedUser.fullName || updatedUser.email}'s data has been saved.`,
       });
       setEditingUser(null);
     } catch (err) {
       console.error('Firebase update error:', err);
       toast({
         title: 'Update failed',
-        description: (err).message || 'Could not update user in database'
+        description: err?.message || 'Could not update user in database',
+        variant: 'destructive'
       });
     }
   };

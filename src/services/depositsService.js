@@ -1,6 +1,7 @@
-import { app } from '@/lib/firebase.js';
-import { ref, get, child, update, getDatabase, push, runTransaction } from 'firebase/database';
-import { getAuth } from 'firebase/auth';
+import { app, auth } from '@/lib/firebase.js';
+import { ref, get, child, update, getDatabase, push } from 'firebase/database';
+
+const isPermissionDenied = (error) => String(error?.message || error || '').includes('PERMISSION_DENIED') || String(error?.message || error || '').includes('permission denied');
 
 export const depositsService = {
   // Fetch all deposits
@@ -48,6 +49,9 @@ export const depositsService = {
 
       return deposits;
     } catch (error) {
+      if (isPermissionDenied(error)) {
+        return [];
+      }
       console.error('Error fetching deposits:', error);
       throw error;
     }
@@ -134,7 +138,6 @@ export const depositsService = {
   async approveDeposit(depositId, userId, amount) {
     try {
       const dbRef = ref(getDatabase(app));
-      const depositRef = ref(getDatabase(app), `deposits/${depositId}`);
 
       const [depositSnap, userSnap] = await Promise.all([
         get(child(dbRef, `deposits/${depositId}`)),
@@ -143,49 +146,74 @@ export const depositsService = {
 
       if (!depositSnap.exists()) throw new Error('Deposit not found');
       if (!userSnap.exists()) throw new Error('User not found');
-      if (depositSnap.val().status !== 'pending') {
-        throw new Error('This deposit has already been processed');
+
+      const depositData = depositSnap.val();
+      if (depositData.status !== 'pending') {
+        return false;
       }
 
-      const userData = userSnap.val();
-      const depositData = depositSnap.val();
       if (depositData.userId !== userId) throw new Error('Deposit user mismatch');
+
       const approvedAmount = Number(depositData.amount);
       if (!Number.isFinite(approvedAmount) || approvedAmount <= 0 || approvedAmount !== Number(amount)) {
         throw new Error('Invalid deposit amount');
       }
-      const claimResult = await runTransaction(depositRef, currentDeposit => {
-        if (!currentDeposit || currentDeposit.status !== 'pending') return;
-        return { ...currentDeposit, status: 'approved' };
-      });
-      if (!claimResult.committed) throw new Error('This deposit has already been processed');
-      const currentBalance = parseFloat(userData.accountBalance || userData.balance || 0);
+
+      const userData = userSnap.val();
+      const currentBalance = Number.parseFloat(userData.accountBalance ?? userData.balance ?? 0);
+      if (!Number.isFinite(currentBalance)) {
+        throw new Error('Invalid user balance');
+      }
+
       const now = new Date().toISOString();
-      const adminUid = getAuth(app).currentUser?.uid;
+      const adminUid = auth.currentUser?.uid;
       if (!adminUid) throw new Error('Admin authentication required');
+
       const activityKey = push(child(dbRef, 'activityLogs')).key;
-      const transactionKey = depositData.transactionId || depositId;
+      const transactionKey = String(depositData.transactionId || depositId);
       const userTransactionPath = `users/${userId}/transactions/${transactionKey}`;
       const newBalance = currentBalance + approvedAmount;
+      const totalDeposit = Number.parseFloat(userData.totalDeposit || 0);
+
       const updates = {
         [`deposits/${depositId}/status`]: 'approved',
         [`deposits/${depositId}/approvedDate`]: now,
         [`deposits/${depositId}/approvedBy`]: adminUid,
-        [`${userTransactionPath}/status`]: 'approved',
-        [`${userTransactionPath}/approvedAt`]: now,
-        [`${userTransactionPath}/approvedBy`]: adminUid,
+        [`${userTransactionPath}`]: {
+          ...(userData.transactions?.[transactionKey] || {}),
+          type: 'deposit',
+          status: 'approved',
+          userId,
+          depositId,
+          transactionId: transactionKey,
+          amount: approvedAmount,
+          createdAt: depositData.createdAt || depositData.submittedDate,
+          approvedAt: now,
+          approvedBy: adminUid,
+        },
         [`users/${userId}/accountBalance`]: newBalance,
         [`users/${userId}/balance`]: newBalance,
-        [`users/${userId}/totalDeposit`]: parseFloat(userData.totalDeposit || 0) + approvedAmount,
+        [`users/${userId}/totalDeposit`]: totalDeposit + approvedAmount,
         [`users/${userId}/lastUpdated`]: now,
         [`activityLogs/${activityKey}`]: {
-          type: 'deposit_approved', userId, depositId, amount: approvedAmount, performedBy: adminUid,
-          message: `Deposit of $${approvedAmount} approved`, timestamp: now,
+          type: 'deposit_approved',
+          userId,
+          depositId,
+          amount: approvedAmount,
+          performedBy: adminUid,
+          message: `Deposit of $${approvedAmount} approved`,
+          timestamp: now,
         },
         [`transactions/${transactionKey}`]: {
-          type: 'deposit', status: 'approved', userId, depositId,
-          transactionId: transactionKey, amount: approvedAmount, createdAt: depositData.createdAt || depositData.submittedDate,
-          approvedAt: now, approvedBy: adminUid,
+          type: 'deposit',
+          status: 'approved',
+          userId,
+          depositId,
+          transactionId: transactionKey,
+          amount: approvedAmount,
+          createdAt: depositData.createdAt || depositData.submittedDate,
+          approvedAt: now,
+          approvedBy: adminUid,
         },
       };
 
@@ -202,24 +230,24 @@ export const depositsService = {
   async rejectDeposit(depositId, userId, reason = '') {
     try {
       const dbRef = ref(getDatabase(app));
-      const depositRef = ref(getDatabase(app), `deposits/${depositId}`);
       const depositSnap = await get(child(dbRef, `deposits/${depositId}`));
+
       if (!depositSnap.exists()) throw new Error('Deposit not found');
-      if (depositSnap.val().status !== 'pending') {
-        throw new Error('This deposit has already been processed');
+
+      const depositData = depositSnap.val();
+      if (depositData.status !== 'pending') {
+        return false;
       }
-      if (depositSnap.val().userId !== userId) throw new Error('Deposit user mismatch');
-      const claimResult = await runTransaction(depositRef, currentDeposit => {
-        if (!currentDeposit || currentDeposit.status !== 'pending') return;
-        return { ...currentDeposit, status: 'rejected' };
-      });
-      if (!claimResult.committed) throw new Error('This deposit has already been processed');
+
+      if (depositData.userId !== userId) throw new Error('Deposit user mismatch');
 
       const now = new Date().toISOString();
-      const adminUid = getAuth(app).currentUser?.uid;
+      const adminUid = auth.currentUser?.uid;
       if (!adminUid) throw new Error('Admin authentication required');
+
       const activityKey = push(child(dbRef, 'activityLogs')).key;
-      const transactionKey = depositSnap.val().transactionId || depositId;
+      const transactionKey = depositData.transactionId || depositId;
+
       await update(dbRef, {
         [`deposits/${depositId}/status`]: 'rejected',
         [`deposits/${depositId}/rejectedDate`]: now,
@@ -231,7 +259,7 @@ export const depositsService = {
         [`users/${userId}/transactions/${transactionKey}/rejectionReason`]: reason,
         [`activityLogs/${activityKey}`]: {
           type: 'deposit_rejected', userId, depositId,
-          amount: depositSnap.val().amount, reason, performedBy: adminUid,
+          amount: depositData.amount, reason, performedBy: adminUid,
           message: `Deposit rejected${reason ? `: ${reason}` : ''}`,
           timestamp: now,
         },
@@ -285,6 +313,9 @@ export const depositsService = {
         pendingAmount,
       };
     } catch (error) {
+      if (isPermissionDenied(error)) {
+        return { totalDeposits: 0, pendingCount: 0, approvedCount: 0, rejectedCount: 0, totalAmount: 0, pendingAmount: 0 };
+      }
       console.error('Error fetching deposit stats:', error);
       throw error;
     }

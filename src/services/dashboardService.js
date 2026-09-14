@@ -1,6 +1,8 @@
 import { app } from '@/lib/firebase.js';
 import { ref, get, child, remove, update, getDatabase } from 'firebase/database';
 
+const isPermissionDenied = (error) => String(error?.message || error || '').includes('PERMISSION_DENIED') || String(error?.message || error || '').includes('permission denied');
+
 export const dashboardService = {
   // Fetch total stats
   async getStats() {
@@ -29,6 +31,9 @@ export const dashboardService = {
         totalProfit,
       };
     } catch (error) {
+      if (isPermissionDenied(error)) {
+        return { totalUsers: 0, totalBalance: 0, totalProfit: 0 };
+      }
       console.error('Error fetching stats:', error);
       throw error;
     }
@@ -63,6 +68,9 @@ export const dashboardService = {
 
       return [];
     } catch (error) {
+      if (isPermissionDenied(error)) {
+        return [];
+      }
       console.error('Error fetching recent users:', error);
       throw error;
     }

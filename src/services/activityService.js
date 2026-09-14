@@ -1,6 +1,8 @@
 import { app } from '@/lib/firebase.js';
 import { ref, get, child, getDatabase, push, update } from 'firebase/database';
 
+const isPermissionDenied = (error) => String(error?.message || error || '').includes('PERMISSION_DENIED') || String(error?.message || error || '').includes('permission denied');
+
 export const activityService = {
   // Fetch all activity logs
   async getAllActivityLogs(limit = 50) {
@@ -29,6 +31,9 @@ export const activityService = {
 
       return logs.slice(0, limit);
     } catch (error) {
+      if (isPermissionDenied(error)) {
+        return [];
+      }
       console.error('Error fetching activity logs:', error);
       throw error;
     }
